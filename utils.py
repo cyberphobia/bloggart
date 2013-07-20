@@ -2,12 +2,8 @@ import os
 import re
 import unicodedata
 
-from google.appengine.ext import webapp
-from google.appengine.ext.webapp.template import _swap_settings
-
-import django.conf
-from django import template
-from django.template import loader
+import jinja2
+import webapp2
 
 import config
 
@@ -51,15 +47,11 @@ def get_template_vals_defaults(template_vals=None):
 
 
 def render_template(template_name, template_vals=None, theme=None):
+  jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIRS))
   template_vals = get_template_vals_defaults(template_vals)
   template_vals.update({'template_name': template_name})
-  old_settings = _swap_settings({'TEMPLATE_DIRS': TEMPLATE_DIRS})
-  try:
-    tpl = loader.get_template(template_name)
-    rendered = tpl.render(template.Context(template_vals))
-  finally:
-    _swap_settings(old_settings)
-  return rendered
+  tpl = jinja.get_template(template_name)
+  return tpl.render(template_vals)
 
 
 def _get_all_paths():
@@ -93,6 +85,10 @@ def _regenerate_sitemap():
       ping_googlesitemap()
 
 def ping_googlesitemap():
+  # Don't ping Google webmaster tools for development instance
+  if os.environ['SERVER_SOFTWARE'].startswith('Devel'):
+    return
+
   import urllib
   from google.appengine.api import urlfetch
   google_url = 'http://www.google.com/webmasters/tools/ping?sitemap=http://' + config.host + '/sitemap.xml.gz'

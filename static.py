@@ -1,16 +1,14 @@
 import datetime
 import hashlib
+import webapp2
 
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.ext import db
 from google.appengine.ext import deferred
 from google.appengine.datastore import entity_pb
-from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
-from google.appengine.ext.webapp.util import run_wsgi_app
 
-import fix_path
 import aetycoon
 import config
 import utils
@@ -75,8 +73,8 @@ def set(path, body, content_type, indexed=True, **kwargs):
   defaults.update(kwargs)
   content = StaticContent(
       key_name=path,
-      body=body,
-      content_type=content_type,
+      body=str(body),
+      content_type=str(content_type),
       indexed=indexed,
       **defaults)
   content.put()
@@ -120,10 +118,10 @@ def remove(path):
     content.delete()
   return db.run_in_transaction(_tx)
 
-class StaticContentHandler(webapp.RequestHandler):
+class StaticContentHandler(webapp2.RequestHandler):
   def output_content(self, content, serve=True):
     if content.content_type:
-      self.response.headers['Content-Type'] = content.content_type
+      self.response.headers['Content-Type'] = str(content.content_type)
     last_modified = content.last_modified.strftime(HTTP_DATE_FMT)
     self.response.headers['Last-Modified'] = last_modified
     self.response.headers['ETag'] = '"%s"' % (content.etag,)
@@ -144,8 +142,8 @@ class StaticContentHandler(webapp.RequestHandler):
         return
     else:
       if config.url_prefix != '':
-        path = path[len(config.url_prefix):]# Strip off prefix
-        if path in ROOT_ONLY_FILES:# This lives at root
+        path = path[len(config.url_prefix):]  # Strip off prefix
+        if path in ROOT_ONLY_FILES:  # This lives at root
           self.error(404)
           self.response.out.write(utils.render_template('404.html'))
           return
@@ -159,7 +157,7 @@ class StaticContentHandler(webapp.RequestHandler):
     if 'If-Modified-Since' in self.request.headers:
       try:
         last_seen = datetime.datetime.strptime(
-            self.request.headers['If-Modified-Since'].split(';')[0],# IE8 '; length=XXXX' as extra arg bug
+            self.request.headers['If-Modified-Since'].split(';')[0],  # IE8 '; length=XXXX' as extra arg bug
             HTTP_DATE_FMT)
         if last_seen >= content.last_modified.replace(microsecond=0):
           serve = False
@@ -174,15 +172,6 @@ class StaticContentHandler(webapp.RequestHandler):
     self.output_content(content, serve)
 
 
-application = webapp.WSGIApplication([
-                ('(/.*)', StaticContentHandler),
-              ])
-
-
-def main():
-  fix_path.fix_sys_path()
-  run_wsgi_app(application)
-
-
-if __name__ == '__main__':
-  main()
+app = webapp2.WSGIApplication([
+    ('(/.*)', StaticContentHandler)
+])

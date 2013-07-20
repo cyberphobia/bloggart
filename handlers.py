@@ -11,7 +11,7 @@ import models
 import post_deploy
 import utils
 
-from django import newforms as forms
+from django import forms
 from google.appengine.ext.db import djangoforms
 
 
@@ -91,20 +91,21 @@ class PostHandler(BaseHandler):
                     initial={'draft': post and post.published is None})
     if form.is_valid():
       post = form.save(commit=False)
-      if form.clean_data['draft']:# Draft post
+      if form.cleaned_data['draft']: # Draft post
         post.published = datetime.datetime.max
         post.put()
       else:
         if not post.path: # Publish post
           post.updated = post.published = datetime.datetime.now()
-        else:# Edit post
+        else: # Edit post
           post.updated = datetime.datetime.now()
         post.publish()
       self.render_to_response("published.html", {
           'post': post,
-          'draft': form.clean_data['draft']})
+          'draft': form.cleaned_data['draft']})
     else:
       self.render_form(form)
+
 
 class DeleteHandler(BaseHandler):
   @with_post

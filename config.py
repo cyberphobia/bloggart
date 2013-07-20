@@ -1,14 +1,14 @@
 # Name of the blog
-blog_name = 'My Blog'
+blog_name = 'Cyberphobia'
 
 # Your name (used for copyright info)
-author_name = 'the author'
+author_name = 'Daniel F'
 
 # (Optional) slogan
-slogan = 'This is my blog'
+slogan = 'Your Random Security Blog.'
 
 # The hostname this site will primarially serve off (used for Atom feeds)
-host = 'localhost:8080'
+host = 'blog.websec.at'
 
 # Selects the theme to use. Theme names correspond to directories under
 # the 'themes' directory, containing templates and static content.
@@ -16,8 +16,8 @@ theme = 'default'
 
 # List of page templates
 page_templates = {
-	'Theme.html': 'Theme',
-	'Simple.html': 'Simple',
+  'Theme.html': 'Theme',
+  'Simple.html': 'Simple',
 }
 
 # Defines the URL organization to use for blog postings. Valid substitutions:
@@ -31,12 +31,12 @@ post_path_format = '/%(year)d/%(month)02d/%(slug)s'
 # enough, you can edit themes/default/base.html instead.
 sidebars = [
   ('Blogroll', [
-    '<a href="http://blog.notdot.net/">Nick Johnsonz</a>',
-    '<a href="http://www.billkatz.com/">Bill Katz</a>',
-    '<a href="http://www.codinghorror.com/blog/">Coding Horror</a>',
-    '<a href="http://craphound.com/">Craphound</a>',
-    '<a href="http://www.neopythonic.blogspot.com/">Neopythonic</a>',
+    '<a href="http://lcamtuf.blogspot.com/">lcamtuf</a>',
+    '<a href="http://blog.cmpxchg8b.com/">Tavis Ormandy</a>',
     '<a href="http://www.schneier.com/blog/">Schneier on Security</a>',
+    '<a href="http://blog.notdot.net/">Nick Johnson</a>',
+    '<a href="http://www.thedailywtf.com/">The Daily WTF</a>',
+    '<a href="http://xkcd.com/">XKCD</a>',
   ]),
 ]
 
@@ -90,13 +90,6 @@ rel_me = None
 # For use a feed proxy like feedburne.google.com
 feed_proxy = None
 
-# To use Google Friends Connect.                                          
-# If you want use Google Friends Connect, go to http://www.google.com/friendconnect/ 
-# and register your domain for get a Google Friends connect ID.
-google_friends_id = None
-google_friends_comments = True # For comments.
-google_friends_members  = True # For a members container.
-
 # To format the date of your post.
 # http://docs.djangoproject.com/en/1.1/ref/templates/builtins/#now
-date_format = "d F, Y"
+date_format = "%d %B, %Y"
