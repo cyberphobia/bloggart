@@ -23,7 +23,7 @@ handlers:
   login: admin
 
 - url: /admin/.*
-  script: admin.app
+  script: admin_handlers.app
   login: admin
   secure: always
 
@@ -32,7 +32,7 @@ handlers:
   upload: themes/[^/]+/static/.*
 
 - url: /.*
-  script: static.app
+  script: main_handlers.app
 
 
 env_variables:

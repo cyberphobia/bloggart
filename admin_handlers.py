@@ -2,11 +2,12 @@ import datetime
 import logging
 import os
 
+from django import forms
 from google.appengine.api import users
 from google.appengine.ext import deferred
-from google.appengine.ext import deferred
-from google.appengine.ext import webapp
+from google.appengine.ext.db import djangoforms
 
+import webapp2
 import xsrfutil
 
 import basehandler
@@ -15,9 +16,6 @@ import markup
 import models
 import post_deploy
 import utils
-
-from django import forms
-from google.appengine.ext.db import djangoforms
 
 
 def with_post(fun):
@@ -227,3 +225,19 @@ class PageDeleteHandler(basehandler.BaseHandler):
   def post(self, page):
     page.remove()
     self.render_to_response('admin/deletedpage.html')
+
+post_deploy.run_deploy_task()
+
+app = webapp2.WSGIApplication([
+  (config.url_prefix + '/admin/', AdminHandler),
+  (config.url_prefix + '/admin/posts', AdminHandler),
+  (config.url_prefix + '/admin/pages', PageAdminHandler),
+  (config.url_prefix + '/admin/newpost', PostHandler),
+  (config.url_prefix + '/admin/post/(\d+)', PostHandler),
+  (config.url_prefix + '/admin/regenerate', RegenerateHandler),
+  (config.url_prefix + '/admin/post/delete/(\d+)', DeleteHandler),
+  (config.url_prefix + '/admin/post/preview/(\d+)', PreviewHandler),
+  (config.url_prefix + '/admin/newpage', PageHandler),
+  (config.url_prefix + '/admin/page/delete/(/.*)', PageDeleteHandler),
+  (config.url_prefix + '/admin/page/(/.*)', PageHandler),
+])
