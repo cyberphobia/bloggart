@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "base.html" %}
 {% block title %}All Posts{% endblock %}
 {% block body %}
   <script type="text/javascript">
@@ -14,35 +14,34 @@
     }
   </script>
   <h2>Posts</h2>
-    <p>
-	  <a href="{{config.url_prefix}}/admin/newpost">Create new post...</a>
-	</p>
+  <p><a href="{{config.url_prefix}}/admin/newpost">Create new post...</a></p>
   {% if last_post != -1 %}
     <p>Posts {{offset+1}} to {{last_post+1}}</p>
     <table>
       <thead>
-	<tr><th>Title</th><th>Published</th><th>Actions</th></tr>
+        <tr><th>Title</th><th>Published</th><th>Actions</th></tr>
       </thead>
       {% for post in posts %}
         <tr>
-          <td><a href="{{config.url_prefix}}/admin/post/{{post.key.id}}">{{post.title|escape}}</a></td>
-          <td>{% if post.path %}{{post.published_tz.strftime("%F %T")}}{% else %}Draft{% endif %}</td>
-	  <td>
-	    {% if post.path %}
-	      <a href="{{config.url_prefix}}{{post.path}}">View</a>
-	    {% else %}
-	      <a href="{{config.url_prefix}}/admin/post/preview/{{post.key.id}}">Preview</a>
-	    {% endif %}
-	      |
-	    <a href="{{config.url_prefix}}/admin/post/{{post.key.id}}">Edit</a>
-        |
-      <form id="delete_form_{{post.key.id}}" 
-        action="{{config.url_prefix}}/admin/post/delete/{{post.key.id}}" method="post" 
-        style="display:inline;margin:0;padding:0;background:none;border:none;">
-        <a href="#" onclick="javascript:delete_post('{{post.key.id}}');">Delete</a>
-      </form>
-	  </td>
-	</tr>
+          <td><a href="{{config.url_prefix}}/admin/post/{{post.key().id()}}">
+            {{post.title}}</a></td>
+          <td>{% if post.path %}{{post.published_tz.strftime("%F %T")}}
+            {% else %}Draft{% endif %}</td>
+          <td>
+            {% if post.path %}
+              <a href="{{config.url_prefix}}{{post.path}}">View</a>
+            {% else %}
+              <a href="{{config.url_prefix}}/admin/post/preview/{{post.key().id()}}">Preview</a>
+            {% endif %}
+            | <a href="{{config.url_prefix}}/admin/post/{{post.key().id()}}">Edit</a> |
+            {% set delete_action = config.url_prefix ~ '/admin/post/delete/' ~ post.key().id() %}
+            <form id="delete_form_{{post.key().id()}}" action="{{delete_action}}" method="post"
+              style="display:inline;margin:0;padding:0;background:none;border:none;">
+              <input type="hidden" name="csrf" value="{{ csrf_token(delete_action) }}">
+              <a href="#" onclick="javascript:delete_post('{{post.key().id()}}');">Delete</a>
+            </form>
+          </td>
+        </tr>
       {% endfor %}
     </table>
   {% else %}
@@ -58,7 +57,9 @@
     <a href="?start={{next_offset}}&count={{count}}">Next -></a>
   {% endif %}
   <h2>Actions</h2>
-  <form method="post" action="{{config.url_prefix}}/admin/regenerate">
+  {% set regenerate_action = config.url_prefix ~ '/admin/regenerate' %}
+  <form method="post" action="{{ regenerate_action }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token(regenerate_action) }}">
     <input type="submit" value="Regenerate all content" />
   </form>
 {% endblock %}

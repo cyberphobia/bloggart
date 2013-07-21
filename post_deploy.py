@@ -52,7 +52,7 @@ post_deploy_tasks = []
 def generate_static_pages(pages):
   def generate(previous_version):
     for path, template, indexed in pages:
-      rendered = utils.render_template(template)
+      rendered = generators.ContentGenerator.render(template)
       static.set(path, rendered, config.html_mime_type, indexed)
   return generate
 
@@ -77,7 +77,7 @@ post_deploy_tasks.append(regenerate_all)
 
 def site_verification(previous_version):
   static.set('/' + config.google_site_verification,
-             utils.render_template('site_verification.html'),
+             generators.ContentGenerator.render('site_verification.html'),
              config.html_mime_type, False)
 
 if config.google_site_verification:

@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "base.html" %}
 {% block title %}All Posts{% endblock %}
 {% block body %}
   <script type="text/javascript">
@@ -29,12 +29,14 @@
           <td>{{page.created.strftime("%F")}}</td>
           <td>{{page.updated.strftime("%F")}}</td>
           <td>
-            <a href="{{config.url_prefix}}{{page.path|escape}}">View</a> |
-            <a href="{{config.url_prefix}}/admin/page/{{page.path|escape}}">Edit</a> |
-            <form id="page_delete_form_{{page.path|escape}}" 
-              action="{{config.url_prefix}}/admin/page/delete/{{page.path|escape}}" method="post" 
+            <a href="{{config.url_prefix}}{{page.path}}">View</a> |
+            <a href="{{config.url_prefix}}/admin/page/{{page.path}}">Edit</a> |
+            {% set delete_action = config.url_prefix ~ '/admin/page/delete/' ~ page.path %}
+            <form id="page_delete_form_{{page.path}}" 
+              action="{{delete_action}}" method="post" 
               style="display:inline;margin:0;padding:0;background:none;border:none;">
-              <a href="#" onclick="javascript:delete_page('{{page.path|escape}}');">Delete</a>
+              <input type="hidden" name="csrf" value="{{ csrf_token(delete_action) }}">
+              <a href="#" onclick="javascript:delete_page('{{page.path}}');">Delete</a>
             </form>
           </td>
         </tr>
@@ -50,7 +52,9 @@
     <a href="?start={{next_offset}}&count={{count}}">Next -></a>
   {% endif %}
   <h2>Actions</h2>
-  <form method="post" action="{{config.url_prefix}}/admin/regenerate">
+  {% set regenerate_action = config.url_prefix ~ '/admin/regenerate' %}
+  <form method="post" action="regenerate_action">
+    <input type="hidden" name="csrf" value="{{ csrf_token(regenerate_action) }}">
     <input type="submit" value="Regenerate all content" />
   </form>
 {% endblock %}

@@ -2,10 +2,14 @@ import datetime
 import itertools
 import os
 import urllib
+
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
 from google.appengine.ext import deferred
 
+import jinja2
+
+import basehandler
 import config
 import markup
 import static
@@ -58,6 +62,25 @@ class ContentGenerator(object):
     """
     raise NotImplementedError()
 
+  @classmethod
+  def render(cls, template_name, template_vals=None):
+    base_templ_dir = os.path.join(os.path.dirname(__file__), 'themes')
+    template_dirs = [os.path.abspath(os.path.join(base_templ_dir, 'default'))]
+    if config.theme and config.theme != 'default':
+      template_dirs.insert(0, os.path.abspath(os.path.join(base_templ_dir, config.theme)))
+
+    jinja = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(template_dirs),
+        extensions=['jinja2.ext.autoescape'],
+        autoescape=True)
+
+    if not template_vals:
+      template_vals = {}
+    template_vals['template_name'] = template_name
+    template_vals['config'] = config
+    template = jinja.get_template(template_name)
+    return template.render(template_vals)
+
 
 class PostContentGenerator(ContentGenerator):
   """ContentGenerator for the actual blog post itself."""
@@ -108,9 +131,12 @@ class PostContentGenerator(ContentGenerator):
       template_vals['prev']=prev
     if next is not None:
       template_vals['next']=next
-    rendered = utils.render_template("post.html", template_vals)
+    rendered = cls.render('post.html', template_vals)
     static.set(post.path, rendered, config.html_mime_type)
+
+# Add this generate to the list.
 generator_list.append(PostContentGenerator)
+
 
 class PostPrevNextContentGenerator(PostContentGenerator):
   """ContentGenerator for the blog posts chronologically before and after the blog post."""
@@ -135,7 +161,7 @@ class PostPrevNextContentGenerator(PostContentGenerator):
      template_vals['prev']=prev
     if next is not None:
      template_vals['next']=next
-    rendered = utils.render_template("post.html", template_vals)
+    rendered = cls.render('post.html', template_vals)
     static.set(post.path, rendered, config.html_mime_type)
 generator_list.append(PostPrevNextContentGenerator)
 
@@ -185,7 +211,7 @@ class ListingContentGenerator(ContentGenerator):
         'prev_page': prev_page if pagenum > 1 else None,
         'next_page': next_page if more_posts else None,
     }
-    rendered = utils.render_template("listing.html", template_vals)
+    rendered = cls.render('listing.html', template_vals)
 
     path_args['pagenum'] = pagenum
     static.set(_get_path() % path_args, rendered, config.html_mime_type)
@@ -280,7 +306,7 @@ class ArchiveIndexContentGenerator(ContentGenerator):
     for date in dates:
       date_struct.setdefault(date.year, []).append(date)
 
-    str = utils.render_template("archive.html", {
+    str = cls.render('archive.html', {
       'generator_class': cls.__name__,
       'dates': dates,
       'date_struct': date_struct.values(),
@@ -311,7 +337,7 @@ class AtomContentGenerator(ContentGenerator):
         'posts': posts,
         'updated': now,
     }
-    rendered = utils.render_template("atom.xml", template_vals)
+    rendered = cls.render('atom.xml', template_vals)
     static.set('/feeds/atom.xml', rendered,
                'application/atom+xml; charset=utf-8', indexed=False,
                last_modified=now)
@@ -339,6 +365,5 @@ class PageContentGenerator(ContentGenerator):
       template_vals = {
           'page': page,
       }
-      rendered = utils.render_template('pages/%s' % (page.template,),
-                                       template_vals)
+      rendered = cls.render('pages/%s' % (page.template), template_vals)
       static.set(page.path, rendered, config.html_mime_type)

@@ -10,6 +10,7 @@ from google.appengine.datastore import entity_pb
 from google.appengine.ext.webapp import template
 
 import aetycoon
+import basehandler
 import config
 import utils
 
@@ -118,7 +119,7 @@ def remove(path):
     content.delete()
   return db.run_in_transaction(_tx)
 
-class StaticContentHandler(webapp2.RequestHandler):
+class StaticContentHandler(basehandler.BaseHandler):
   def output_content(self, content, serve=True):
     if content.content_type:
       self.response.headers['Content-Type'] = str(content.content_type)
@@ -138,32 +139,33 @@ class StaticContentHandler(webapp2.RequestHandler):
     if not path.startswith(config.url_prefix):
       if path not in ROOT_ONLY_FILES:
         self.error(404)
-        self.response.out.write(utils.render_template('404.html'))
+        self.render_to_response('404.html')
         return
     else:
       if config.url_prefix != '':
         path = path[len(config.url_prefix):]  # Strip off prefix
         if path in ROOT_ONLY_FILES:  # This lives at root
           self.error(404)
-          self.response.out.write(utils.render_template('404.html'))
+          self.render_to_response('404.html')
           return
     content = get(path)
     if not content:
       self.error(404)
-      self.response.out.write(utils.render_template('404.html'))
+      self.render_to_response('404.html')
       return
 
     serve = True
     if 'If-Modified-Since' in self.request.headers:
       try:
         last_seen = datetime.datetime.strptime(
-            self.request.headers['If-Modified-Since'].split(';')[0],  # IE8 '; length=XXXX' as extra arg bug
+            self.request.headers['If-Modified-Since'].split(';')[0],
             HTTP_DATE_FMT)
         if last_seen >= content.last_modified.replace(microsecond=0):
           serve = False
       except ValueError, e:
         import logging
-        logging.error('StaticContentHandler in static.py, ValueError:' + self.request.headers['If-Modified-Since'])
+        logging.error('StaticContentHandler in static.py, ValueError: %s',
+                      self.request.headers['If-Modified-Since'])
     if 'If-None-Match' in self.request.headers:
       etags = [x.strip('" ')
                for x in self.request.headers['If-None-Match'].split(',')]

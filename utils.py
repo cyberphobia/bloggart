@@ -2,10 +2,15 @@ import os
 import re
 import unicodedata
 
+from google.appengine.api import users
 import jinja2
 import webapp2
 
+import xsrfutil
+
 import config
+import generators
+import models
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -36,24 +41,6 @@ def format_post_path(post, num):
   }
 
 
-def get_template_vals_defaults(template_vals=None):
-  if template_vals is None:
-    template_vals = {}
-  template_vals.update({
-      'config': config,
-      'devel': os.environ['SERVER_SOFTWARE'].startswith('Devel'),
-  })
-  return template_vals
-
-
-def render_template(template_name, template_vals=None, theme=None):
-  jinja = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIRS))
-  template_vals = get_template_vals_defaults(template_vals)
-  template_vals.update({'template_name': template_name})
-  tpl = jinja.get_template(template_name)
-  return tpl.render(template_vals)
-
-
 def _get_all_paths():
   import static
   keys = []
@@ -74,7 +61,7 @@ def _regenerate_sitemap():
   import gzip
   from StringIO import StringIO
   paths = _get_all_paths()
-  rendered = render_template('sitemap.xml', {'paths': paths})
+  rendered = generators.ContentGenerator.render('sitemap.xml', {'paths': paths})
   static.set('/sitemap.xml', rendered, 'application/xml', False)
   s = StringIO()
   gzip.GzipFile(fileobj=s,mode='wb').write(rendered)

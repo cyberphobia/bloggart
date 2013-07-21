@@ -2,6 +2,8 @@ import aetycoon
 import datetime
 import hashlib
 import re
+
+from google.appengine.api import memcache
 from google.appengine.ext import db
 from google.appengine.ext import deferred
 
@@ -185,3 +187,26 @@ class VersionInfo(db.Model):
   @property
   def bloggart_version(self):
     return (self.bloggart_major, self.bloggart_minor, self.bloggart_rev)
+
+class CsrfSecret(db.Model):
+  secret = db.StringProperty(required=True)
+
+  @staticmethod
+  def get():
+    secret = memcache.get('csrf_secret')
+    if not secret:
+      csrf_secret = CsrfSecret.all().get()
+      if csrf_secret:
+        memcache.set('csrf_secret', csrf_secret.secret)
+      else:
+        # hmm, nothing found? We need to generate a secret for csrf protection.
+        import os, binascii
+        secret = binascii.b2a_hex(os.urandom(16))
+        csrf_secret = CsrfSecret(secret=secret)
+        csrf_secret.put()
+
+      secret = csrf_secret.secret
+      memcache.set('csrf_secret', secret)
+
+    return secret
+

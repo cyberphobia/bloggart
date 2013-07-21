@@ -16,7 +16,7 @@
     <entry>
         <title>{{post.title|escape}}</title>
         <link rel="alternate" type="text/html" href="http://{{config.host}}{{config.url_prefix}}{{post.path}}" />
-        <id>tag:{{config.host}},{{post.updated.strftime("%F")}}:post:{{post.key.id}}</id>
+        <id>tag:{{config.host}},{{post.updated.strftime("%F")}}:post:{{post.key().id()}}</id>
         <updated>{{post.updated_tz.strftime("%F %T")}}</updated>
         <published>{{post.published_tz.strftime("%F %T")}}</published>
         <author>
