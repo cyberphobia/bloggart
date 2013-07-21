@@ -19,12 +19,13 @@ import utils
 
 
 def with_post(fun):
-  def decorate(self, post_id=None):
+  def decorate(self, post_key=None):
     post = None
-    if post_id:
-      post = models.BlogPost.get_by_id(int(post_id))
+    if post_key:
+      post = models.BlogPost.get_by_key_name(post_key)
+      print "POST KEY!!!!!!!!!!!!!!!!!!!!!" + post_key
       if not post:
-        self.error(404)
+        self.fail(404)
         return
     fun(self, post)
   return decorate
@@ -44,21 +45,6 @@ def with_page(fun):
   return decorate
 
 
-class PostForm(djangoforms.ModelForm):
-  title = forms.CharField(widget=forms.TextInput(attrs={'id':'name'}))
-  body = forms.CharField(widget=forms.Textarea(attrs={
-      'id':'message',
-      'rows': 10,
-      'cols': 20}))
-  body_markup = forms.ChoiceField(
-    choices=[(k, v[0]) for k, v in markup.MARKUP_MAP.iteritems()])
-  tags = forms.CharField(widget=forms.Textarea(attrs={'rows': 5, 'cols': 20}))
-  draft = forms.BooleanField(required=False)
-  class Meta:
-    model = models.BlogPost
-    fields = [ 'title', 'body', 'tags' ]
-
-
 class AdminHandler(basehandler.BaseHandler):
   def get(self):
     offset = int(self.request.get('start', 0))
@@ -75,35 +61,43 @@ class AdminHandler(basehandler.BaseHandler):
     self.render_to_response('admin/index.html')
 
 
+class PostForm(djangoforms.ModelForm):
+  title = forms.CharField(widget=forms.TextInput(attrs={'id':'name'}))
+  body = forms.CharField(widget=forms.Textarea(attrs={
+      'id': 'message',
+      'rows': 10,
+      'cols': 20}))
+  body_markup = forms.ChoiceField(
+    choices=[(k, v[0]) for k, v in markup.MARKUP_MAP.iteritems()])
+  tags = forms.CharField(widget=forms.Textarea(attrs={'rows': 5, 'cols': 20}))
+  is_draft = forms.BooleanField(required=False)
+
+  class Meta:
+    model = models.BlogPost
+    fields = [ 'title', 'tags' ]
+
+
 class PostHandler(basehandler.BaseHandler):
   @with_post
   def get(self, post):
     self.templ['form'] = PostForm(
         instance=post,
         initial={
-          'draft': post and not post.path,
           'body_markup': post and post.body_markup or config.default_markup,
+          'body' : post and (post.draft or post.body)
         })
     self.render_to_response('admin/edit.html')
 
   @basehandler.csrf_protect
   @with_post
   def post(self, post):
-    form = PostForm(data=self.request.POST, instance=post,
-                    initial={'draft': post and post.published is None})
+    form = PostForm(data=self.request.POST, instance=post)
     if form.is_valid():
       post = form.save(commit=False)
-      if form.cleaned_data['draft']: # Draft post
-        post.published = datetime.datetime.max
-        post.put()
-      else:
-        if not post.path: # Publish post
-          post.updated = post.published = datetime.datetime.now()
-        else: # Edit post
-          post.updated = datetime.datetime.now()
-        post.publish()
+      post = post.update(form.cleaned_data['body'], is_draft=form.cleaned_data['is_draft'])
+
+      self.templ['draft'] = form.cleaned_data['is_draft']
       self.templ['post'] = post
-      self.templ['draft'] = form.cleaned_data['draft']
       self.render_to_response('admin/published.html')
     else:
       self.templ['form'] = form
@@ -114,23 +108,18 @@ class DeleteHandler(basehandler.BaseHandler):
   @basehandler.csrf_protect
   @with_post
   def post(self, post):
-    if post.path:# Published post
-      post.remove()
-    else:# Draft
-      post.delete()
+    post.remove()
     self.render_to_response('admin/deleted.html')
 
 
 class PreviewHandler(basehandler.BaseHandler):
   @with_post
   def get(self, post):
-    # Temporary set a published date iff it's still
-    # datetime.max. Django's date filter has a problem with
-    # datetime.max and a "real" date looks better.
-    if post.published == datetime.datetime.max:
+    # Temporary set a published date
+    if not post.published:
       post.published = datetime.datetime.now()
     self.templ['post'] = post
-    self.render_to_response('admin/post.html')
+    self.render_to_response('post.html')
 
 
 class RegenerateHandler(basehandler.BaseHandler):
@@ -233,10 +222,10 @@ app = webapp2.WSGIApplication([
   (config.url_prefix + '/admin/posts', AdminHandler),
   (config.url_prefix + '/admin/pages', PageAdminHandler),
   (config.url_prefix + '/admin/newpost', PostHandler),
-  (config.url_prefix + '/admin/post/(\d+)', PostHandler),
+  (config.url_prefix + '/admin/post/delete(/.*)', DeleteHandler),
+  (config.url_prefix + '/admin/post/preview(/.*)', PreviewHandler),
+  (config.url_prefix + '/admin/post(/.*)', PostHandler),
   (config.url_prefix + '/admin/regenerate', RegenerateHandler),
-  (config.url_prefix + '/admin/post/delete/(\d+)', DeleteHandler),
-  (config.url_prefix + '/admin/post/preview/(\d+)', PreviewHandler),
   (config.url_prefix + '/admin/newpage', PageHandler),
   (config.url_prefix + '/admin/page/delete/(/.*)', PageDeleteHandler),
   (config.url_prefix + '/admin/page/(/.*)', PageHandler),

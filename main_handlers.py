@@ -2,8 +2,12 @@ import datetime
 
 import webapp2
 
+from google.appengine.api import memcache
+from google.appengine.ext import db
+
 import basehandler
 import config
+import models
 import static
 
 
@@ -13,6 +17,22 @@ if config.google_site_verification is not None:
   ROOT_ONLY_FILES = ['/robots.txt','/' + config.google_site_verification]
 else:
   ROOT_ONLY_FILES = ['/robots.txt']
+
+
+class BlogPostHandler(basehandler.BaseHandler):
+  @basehandler.cached()
+  def get(self, post_key):
+    post = models.BlogPost.get_by_key_name(post_key)
+    if not post:
+      self.fail(error=404, template='404.html')
+      return
+
+    prev, next = models.BlogPost.get_prev_next(post)
+    self.templ['post'] = post
+    self.templ['prev'] = prev
+    self.templ['next'] = next
+
+    return self.render('post.html')
 
 
 class StaticContentHandler(basehandler.BaseHandler):
@@ -71,5 +91,6 @@ class StaticContentHandler(basehandler.BaseHandler):
 
 
 app = webapp2.WSGIApplication([
+    ('(/\d+/\d+/.*)', BlogPostHandler),
     ('(/.*)', StaticContentHandler)
 ])

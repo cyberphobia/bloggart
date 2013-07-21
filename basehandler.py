@@ -1,5 +1,6 @@
 import os
 
+from google.appengine.api import memcache
 from google.appengine.api import users
 
 import jinja2
@@ -10,7 +11,7 @@ import models
 import xsrfutil
 
 
-def csrf_protect(fun):
+def csrf_protect(func):
   """Decorator to protect get and post functions from CSRF."""
   def decorate(self, *args, **kwargs):
     path = os.environ.get('PATH_INFO', '/')
@@ -24,9 +25,33 @@ def csrf_protect(fun):
       self.error(403)
       return
 
-    return fun(self, *args, **kwargs)
+    return func(self, *args, **kwargs)
 
   return decorate
+
+
+def cached(content_type='text/html; charset=utf-8'):
+  """Decorator for caching the output in memcache.
+
+  Note that the decorator requires that the page is identified by a key passed
+  as first argument to get/post functions bearing this decorator. This
+  decorator should only be used if the output is always the same for the same
+  key.
+  """
+  def wrapper(func):
+    def decorate(self, key):
+      handler_name = self.__class__.__name__
+      memcache_key = 'cache:%s:%s' % (handler_name, key)
+      cached_output = memcache.get(memcache_key)
+      if not cached_output:
+        cached_output = func(self, key)
+        memcache.set(memcache_key, cached_output)
+
+      self.response.headers['Content-Type'] = content_type
+      self.response.out.write(cached_output)
+
+    return decorate
+  return wrapper
 
 
 class BaseHandler(webapp2.RequestHandler):
@@ -77,3 +102,7 @@ class BaseHandler(webapp2.RequestHandler):
     pprint.pprint(self.templ)
     template = self.jinja.get_template(template_name)
     return template.render(template_vals)
+
+  def fail(self, error=404, template='404.html'):
+    self.error(error)
+    self.render_to_response(template)

@@ -25,7 +25,7 @@ class BlogDate(db.Model):
 
   @classmethod
   def get_key_name(cls, post):
-    return '%d/%02d' % (post.published_tz.year, post.published_tz.month)
+    return '%d/%02d' % (post.published.year, post.published.month)
 
   @classmethod
   def create_for_post(cls, post):
@@ -44,6 +44,9 @@ class BlogDate(db.Model):
 
 
 class BlogPost(db.Model):
+  # Name of the handler that serves this Model
+  HANDLER = 'PostHandler'
+
   # The URL path to the blog post. Posts have a path iff they are published.
   path = db.StringProperty()
   title = db.StringProperty(required=True, indexed=False)
@@ -52,16 +55,11 @@ class BlogPost(db.Model):
   body = db.TextProperty(required=True)
   tags = aetycoon.SetProperty(basestring, indexed=False)
   published = db.DateTimeProperty()
-  updated = db.DateTimeProperty(auto_now=False)
+  created = db.DateTimeProperty(auto_now_add=True)
+  updated = db.DateTimeProperty(auto_now=True)
   deps = aetycoon.PickleProperty()
-
-  @property
-  def published_tz(self):
-    return utils.tz_field(self.published)
-
-  @property
-  def updated_tz(self):
-    return utils.tz_field(self.updated)
+  draft = db.TextProperty()
+  is_deleted = db.BooleanProperty(default=False)
 
   @aetycoon.TransformProperty(tags)
   def normalized_tags(tags):
@@ -91,63 +89,73 @@ class BlogPost(db.Model):
     val = (self.title, self.summary, self.tags, self.published)
     return hashlib.sha1(str(val)).hexdigest()
 
-  def publish(self):
-    regenerate = False
-    if not self.path:
-      num = 0
-      content = None
-      while not content:
-        path = utils.format_post_path(self, num)
-        content = static.add(path, '', config.html_mime_type)
-        num += 1
+  def set_key_name(self, key_name):
+    post_properties = BlogPost.properties()
+    del post_properties['normalized_tags']
+    new_post = BlogPost(
+        key_name=key_name,
+        **dict([(prop, getattr(self, prop)) for prop in post_properties]))
+    return new_post
+
+  def update(self, body, is_draft=False):
+    if is_draft:
+      self.draft = body
+    else:
+      memcache.flush_all()
+      self.draft = None
+      self.body = body
+
+    if not self.path and not is_draft:
+      # Post is being published for the first time
+      self.published = datetime.datetime.now()
+      same_path = True
+      count = 0
+      while same_path:
+        path = utils.format_post_path(self, count)
+        same_path = models.BlogPost.get_by_key_name(path)
+        count += 1
+
       self.path = path
-      self.put()
-      # Force regenerate on new publish. Also helps with generation of
-      # chronologically previous and next page.
-      regenerate = True
+      if self.is_saved():
+        new_post = self.set_key_name(path)
+        new_post.put()
+        self.delete()
+        BlogDate.create_for_post(new_post)
+        return new_post
 
-    BlogDate.create_for_post(self)
+    if not self.is_saved():
+      new_post = self.set_key_name('/draft:' + utils.slugify(self.title))
+      new_post.put()
+      return new_post
 
-    for generator_class, deps in self.get_deps(regenerate=regenerate):
-      for dep in deps:
-        if generator_class.can_defer:
-          deferred.defer(generator_class.generate_resource, None, dep)
-        else:
-          generator_class.generate_resource(self, dep)
     self.put()
+    return self
 
   def remove(self):
     if not self.is_saved():
       return
-    # It is important that the get_deps() return the post dependency
-    # before the list dependencies as the BlogPost entity gets deleted
-    # while calling PostContentGenerator.
-    for generator_class, deps in self.get_deps(regenerate=True):
-      for dep in deps:
-        if generator_class.can_defer:
-          deferred.defer(generator_class.generate_resource, None, dep)
-        else:
-          if generator_class.name() == 'PostContentGenerator':
-            generator_class.generate_resource(self, dep, action='delete')
-            self.delete()
-          else:
-            generator_class.generate_resource(self, dep)
 
-  def get_deps(self, regenerate=False):
-    if not self.deps:
-      self.deps = {}
-    for generator_class in generators.generator_list:
-      new_deps = set(generator_class.get_resource_list(self))
-      new_etag = generator_class.get_etag(self)
-      old_deps, old_etag = self.deps.get(generator_class.name(), (set(), None))
-      if new_etag != old_etag or regenerate:
-        # If the etag has changed, regenerate everything
-        to_regenerate = new_deps | old_deps
-      else:
-        # Otherwise just regenerate the changes
-        to_regenerate = new_deps ^ old_deps
-      self.deps[generator_class.name()] = (new_deps, new_etag)
-      yield generator_class, to_regenerate
+    # TODO: Delete BlogDate if this is the only entry for the date.
+    self.delete()
+    memcache.flush_all()
+
+  @classmethod
+  def get_prev_next(cls, post):
+    """Retrieves the chronologically previous and next post for this post"""
+    q = cls.all().order('-published')
+    q.filter('is_draft =', False)
+    q.filter('is_deleted =', False)
+    q.filter('published <', post.published)
+    prev = q.get()
+
+    q = cls.all().order('published')
+    q.filter('is_draft =', False)
+    q.filter('is_deleted =', False)
+    q.filter('published >', post.published)
+    next = q.get()
+
+    return prev,next
+
 
 class Page(db.Model):
   # The URL path to the page.
