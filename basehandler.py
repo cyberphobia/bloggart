@@ -48,9 +48,10 @@ def cached(content_type='text/html; charset=utf-8'):
       handler_name = self.__class__.__name__
       memcache_key = 'cache:%s:%s' % (handler_name, key)
       cached_output = memcache.get(memcache_key)
-      if not cached_output:
+      if not cached_output or users.is_current_user_admin():
         cached_output = func(self, *args, **kwargs)
-        memcache.set(memcache_key, cached_output)
+        if not users.is_current_user_admin():
+          memcache.set(memcache_key, cached_output)
 
       self.response.headers['Content-Type'] = content_type
       self.response.out.write(cached_output)
