@@ -14,7 +14,6 @@ import basehandler
 import config
 import markup
 import models
-import post_deploy
 import utils
 
 
@@ -23,7 +22,6 @@ def with_post(fun):
     post = None
     if post_key:
       post = models.BlogPost.get_by_key_name(post_key)
-      print "POST KEY!!!!!!!!!!!!!!!!!!!!!" + post_key
       if not post:
         self.fail(404)
         return
@@ -122,15 +120,6 @@ class PreviewHandler(basehandler.BaseHandler):
     self.render_to_response('post.html')
 
 
-class RegenerateHandler(basehandler.BaseHandler):
-  @basehandler.csrf_protect
-  def post(self):
-    deferred.defer(post_deploy.PostRegenerator().regenerate)
-    deferred.defer(post_deploy.PageRegenerator().regenerate)
-    deferred.defer(post_deploy.try_post_deploy, force=True)
-    self.render_to_response('admin/regenerating.html')
-
-
 class PageForm(djangoforms.ModelForm):
   path = forms.RegexField(
     widget=forms.TextInput(attrs={'id':'path'}),
@@ -215,18 +204,24 @@ class PageDeleteHandler(basehandler.BaseHandler):
     page.remove()
     self.render_to_response('admin/deletedpage.html')
 
-post_deploy.run_deploy_task()
+
+class RegenerateHandler(basehandler.BaseHandler):
+  @basehandler.csrf_protect
+  def post(self):
+    memcache.flush_all()
+    self.render_to_response('admin/regenerating.html')
+
 
 app = webapp2.WSGIApplication([
-  (config.url_prefix + '/admin/', AdminHandler),
-  (config.url_prefix + '/admin/posts', AdminHandler),
-  (config.url_prefix + '/admin/pages', PageAdminHandler),
-  (config.url_prefix + '/admin/newpost', PostHandler),
-  (config.url_prefix + '/admin/post/delete(/.*)', DeleteHandler),
-  (config.url_prefix + '/admin/post/preview(/.*)', PreviewHandler),
-  (config.url_prefix + '/admin/post(/.*)', PostHandler),
-  (config.url_prefix + '/admin/regenerate', RegenerateHandler),
-  (config.url_prefix + '/admin/newpage', PageHandler),
-  (config.url_prefix + '/admin/page/delete/(/.*)', PageDeleteHandler),
-  (config.url_prefix + '/admin/page/(/.*)', PageHandler),
+  ('/admin/', AdminHandler),
+  ('/admin/posts', AdminHandler),
+  ('/admin/pages', PageAdminHandler),
+  ('/admin/newpost', PostHandler),
+  ('/admin/regenerate', RegenerateHandler),
+  ('/admin/post/delete(/.*)', DeleteHandler),
+  ('/admin/post/preview(/.*)', PreviewHandler),
+  ('/admin/post(/.*)', PostHandler),
+  ('/admin/newpage', PageHandler),
+  ('/admin/page/delete/(/.*)', PageDeleteHandler),
+  ('/admin/page/(/.*)', PageHandler),
 ])

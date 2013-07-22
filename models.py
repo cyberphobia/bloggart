@@ -8,9 +8,7 @@ from google.appengine.ext import db
 from google.appengine.ext import deferred
 
 import config
-import generators
 import markup
-import static
 import utils
 
 
@@ -36,7 +34,7 @@ class BlogDate(db.Model):
   @classmethod
   def datetime_from_key_name(cls, key_name):
     year, month = key_name.split("/")
-    return datetime.datetime(int(year), int(month), 1, tzinfo=utils.tzinfo())
+    return datetime.datetime(int(year), int(month), 1)
 
   @property
   def date(self):
@@ -52,7 +50,7 @@ class BlogPost(db.Model):
   title = db.StringProperty(required=True, indexed=False)
   body_markup = db.StringProperty(choices=set(markup.MARKUP_MAP),
                                   default=DEFAULT_MARKUP)
-  body = db.TextProperty(required=True)
+  body = db.TextProperty()
   tags = aetycoon.SetProperty(basestring, indexed=False)
   published = db.DateTimeProperty()
   created = db.DateTimeProperty(auto_now_add=True)
@@ -112,7 +110,7 @@ class BlogPost(db.Model):
       count = 0
       while same_path:
         path = utils.format_post_path(self, count)
-        same_path = models.BlogPost.get_by_key_name(path)
+        same_path = BlogPost.get_by_key_name(path)
         count += 1
 
       self.path = path
@@ -179,22 +177,14 @@ class Page(db.Model):
   def publish(self):
     self._key_name = self.path
     self.put()
-    generators.PageContentGenerator.generate_resource(self, self.path);
+    memcache.flush_all()
 
   def remove(self):
     if not self.is_saved():   
       return
     self.delete()
-    generators.PageContentGenerator.generate_resource(self, self.path, action='delete')
+    memcache.flush_all()
 
-class VersionInfo(db.Model):
-  bloggart_major = db.IntegerProperty(required=True)
-  bloggart_minor = db.IntegerProperty(required=True)
-  bloggart_rev = db.IntegerProperty(required=True)
-
-  @property
-  def bloggart_version(self):
-    return (self.bloggart_major, self.bloggart_minor, self.bloggart_rev)
 
 class CsrfSecret(db.Model):
   secret = db.StringProperty(required=True)

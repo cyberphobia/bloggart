@@ -2,12 +2,12 @@
 {% block title %}Archives - {{config.blog_name}}{% endblock %}
 {% block body %}
 <ul>
-  {% for months in date_struct %}
+  {% for year in years %}
   <li>
-    {% for date in months %}
+    {% for date in date_struct[year] %}
       {% if loop.first %}{{ date.strftime("%Y") }}<ul>{% endif %}
       <li>
-        <a href="{{config.url_prefix}}/archive/{{date.strftime("%Y/%m")}}/">
+        <a href="/archive/{{date.strftime("%Y/%m")}}/">
           {{date.strftime("%B")}}
         </a>
       </li>

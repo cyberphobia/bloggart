@@ -7,7 +7,7 @@
       {% if post.tags %}
         | Filed under
         {% for tag in post.tag_pairs %}
-          <a href="{{config.url_prefix}}/tag/{{tag.1|escape}}">{{tag.0|escape}}</a>{% if not loop.last %}, {% endif %}
+          <a href="/tag/{{tag.1|escape}}">{{tag.0|escape}}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}
       {% endif %}
     </p>
@@ -16,10 +16,10 @@
     <span class="date">{{post.published.strftime(config.date_format)}}</span>
   </p>
   {% if prev %}
-    <a id="prev" href="{{config.url_prefix}}{{prev.path}}">Previous Post</a>
+    <a id="prev" href="{{prev.path}}">Previous Post</a>
   {% endif %}
   {% if next %}
-    <a id="next" href="{{config.url_prefix}}{{next.path}}">Next Post</a>
+    <a id="next" href="{{next.path}}">Next Post</a>
   {% endif %}
 
   {% if config.disqus_forum %}

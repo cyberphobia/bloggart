@@ -59,17 +59,6 @@ analytics_id = None
 # If you want to use PubSubHubbub, supply the hub URL to use here.
 hubbub_hub_url = 'http://pubsubhubbub.appspot.com/'
 
-# If you want to ping Google Sitemap when your sitemap is generated change this to True, else False
-# see: http://www.google.com/support/webmasters/bin/answer.py?hl=en&answer=34609 for more information
-google_sitemap_ping = True
-
-# If you want to use Google Site verification, go to
-# https://www.google.com/webmasters/tools/ , add your site, choose the 'upload
-# an html file' method, then set the NAME of the file below.
-# Note that you do not need to download the file provided - just enter its name
-# here.
-google_site_verification = None
-
 # Default markup language for entry bodies (defaults to html).
 default_markup = 'html'
 
@@ -78,10 +67,6 @@ default_markup = 'html'
 # 'vs', 'trac', 'tango', 'fruity', 'autumn', 'bw', 'emacs', 'pastie',
 # 'friendly', 'native'.
 highlighting_style = 'friendly'
-
-# Absolute url of the blog application use '/blog' for host/blog/
-# and '' for host/.Also remember to change app.yaml accordingly
-url_prefix = ''
 
 # Defines where the user is defined in the rel="me" of your pages.
 # This allows you to expand on your social graph.

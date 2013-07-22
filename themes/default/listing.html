@@ -2,31 +2,34 @@
 {% block title %}{{config.blog_name}}{% endblock %}
 {% block body %}
   {% for post in posts %}
-    <h2><a href="{{config.url_prefix}}{{post.path}}">{{post.title|escape}}</a></h2>
+    <h2><a href="{{post.path}}">{{post.title}}</a></h2>
     <p class="post-info">
       Posted by {{config.author_name}}
       {% if post.tags %}
         | Filed under
         {% for tag in post.tag_pairs %}
-          <a href="{{config.url_prefix}}/tag/{{tag.1|escape}}">{{tag.0|escape}}</a>
-          {% if not loop.last %}, {% endif %}
+          <a href="/tag/{{tag.1}}">{{tag.0}}</a>
+          {%- if not loop.last %}, {% endif %}
         {% endfor %}
       {% endif %}
     </p>
-    {{post.summary}}
+    {{post.summary|safe}}
     <p class="postmeta">
-      <a href="{{config.url_prefix}}{{post.path}}" class="readmore">Read more</a> |
+      <a href="{{post.path}}" class="readmore">Read more</a> |
       {% if config.disqus_forum %}
-        <a href="{{config.url_prefix}}{{post.path}}#disqus_thread" class="readmore">Comments</a> |
+        <a href="{{post.path}}#disqus_thread" class="readmore">Comments</a> |
       {% endif %}
       <span class="date">{{post.published.strftime(config.date_format)}}</span>
     </p>
+    {% set post_len = loop.index %}
   {% endfor %}
-  {% if prev_page %}
-    <a id="prev" href="{{config.url_prefix}}{{prev_page}}">Newer</a>
-  {% endif %}
-  {% if next_page %}
-    <a id="next" href="{{config.url_prefix}}{{next_page}}">Older</a>
+  {% if handler_class != 'ArchiveHandler' %}
+    {% if page > 1 %}
+      <a id="prev" href="{{page_path}}/{{page-1}}">Newer</a>
+    {% endif %}
+    {% if post_len == 10 %}
+      <a id="next" href="{{page_path}}/{{page+1}}">Older</a>
+    {% endif %}
   {% endif %}
   {% if config.disqus_forum %}
     <script type="text/javascript">

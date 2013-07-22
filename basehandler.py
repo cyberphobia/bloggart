@@ -39,12 +39,17 @@ def cached(content_type='text/html; charset=utf-8'):
   key.
   """
   def wrapper(func):
-    def decorate(self, key):
+    def decorate(self, *args, **kwargs):
+      # Use the "key" argument, or the first non-kw argument, or the first kwarg.
+      key = kwargs.get('key', None)
+      if not key and len(args) > 0:
+        key = args[0]
+
       handler_name = self.__class__.__name__
       memcache_key = 'cache:%s:%s' % (handler_name, key)
       cached_output = memcache.get(memcache_key)
       if not cached_output:
-        cached_output = func(self, key)
+        cached_output = func(self, *args, **kwargs)
         memcache.set(memcache_key, cached_output)
 
       self.response.headers['Content-Type'] = content_type
@@ -98,11 +103,12 @@ class BaseHandler(webapp2.RequestHandler):
   def render(self, template_name, template_vals=None, theme=None):
     if not template_vals:
       template_vals = self.templ
-    import pprint
-    pprint.pprint(self.templ)
     template = self.jinja.get_template(template_name)
     return template.render(template_vals)
 
   def fail(self, error=404, template='404.html'):
     self.error(error)
-    self.render_to_response(template)
+    return self.render(template)
+
+  def fail_to_response(self, error=404, template='404.html'):
+    self.response.out.write(self.fail(error, template))

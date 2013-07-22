@@ -14,7 +14,7 @@
     }
   </script>
   <h2>Posts</h2>
-  <p><a href="{{config.url_prefix}}/admin/newpost">Create new post...</a></p>
+  <p><a href="/admin/newpost">Create new post...</a></p>
   {% if last_post != -1 %}
     <p>Posts {{offset+1}} to {{last_post+1}}</p>
     <table>
@@ -23,18 +23,18 @@
       </thead>
       {% for post in posts %}
         <tr>
-          <td><a href="{{config.url_prefix}}/admin/post{{post.key().id_or_name()}}">
+          <td><a href="/admin/post{{post.key().id_or_name()}}">
             {{post.title}}</a></td>
           <td>{% if post.path %}{{post.published.strftime("%F %T")}}
             {% else %}Draft{% endif %}</td>
           <td>
             {% if post.path %}
-              <a href="{{config.url_prefix}}{{post.path}}">View</a>
+              <a href="{{post.path}}">View</a>
             {% else %}
-              <a href="{{config.url_prefix}}/admin/post/preview{{post.key().id_or_name()}}">Preview</a>
+              <a href="/admin/post/preview{{post.key().id_or_name()}}">Preview</a>
             {% endif %}
-            | <a href="{{config.url_prefix}}/admin/post{{post.key().id_or_name()}}">Edit</a> |
-            {% set delete_action = config.url_prefix ~ '/admin/post/delete' ~ post.key().id_or_name() %}
+            | <a href="/admin/post{{post.key().id_or_name()}}">Edit</a> |
+            {% set delete_action = '/admin/post/delete' ~ post.key().id_or_name() %}
             <form id="delete_form_{{post.key().id_or_name()}}" action="{{delete_action}}" method="post"
               style="display:inline;margin:0;padding:0;background:none;border:none;">
               <input type="hidden" name="csrf" value="{{ csrf_token(delete_action) }}">
@@ -47,7 +47,7 @@
   {% else %}
     <p>
       No posts yet.<br />
-      <a href="{{config.url_prefix}}/admin/newpost">Write your first post.</a>
+      <a href="/admin/newpost">Write your first post.</a>
     </p>
   {% endif %}
   {% if offset != 0 %}
@@ -57,9 +57,8 @@
     <a href="?start={{next_offset}}&count={{count}}">Next -></a>
   {% endif %}
   <h2>Actions</h2>
-  {% set regenerate_action = config.url_prefix ~ '/admin/regenerate' %}
-  <form method="post" action="{{ regenerate_action }}">
-    <input type="hidden" name="csrf" value="{{ csrf_token(regenerate_action) }}">
+  <form method="post" action="/admin/regenerate">
+    <input type="hidden" name="csrf" value="{{ csrf_token('/admin/regenerate') }}">
     <input type="submit" value="Regenerate all content" />
   </form>
 {% endblock %}

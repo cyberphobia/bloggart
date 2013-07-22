@@ -4,15 +4,15 @@
   <title>{% block title %}Bloggart{% endblock %}</title>
   {% block style %}
     <link rel="stylesheet" type="text/css" media="screen"
-      href="{{config.url_prefix}}/static/{{config.theme}}/css/screen.css" />
+      href="/static/{{config.theme}}/css/screen.css" />
   {% endblock %}
   {% if config.highlighting_style %}
     <link rel="stylesheet" type="text/css" media="screen"
-      href="{{config.url_prefix}}/static/{{config.theme}}/css/pygments_{{config.highlighting_style}}.css" />
+      href="/static/{{config.theme}}/css/pygments_{{config.highlighting_style}}.css" />
   {% endif %}
   <link rel="alternate" type="application/atom+xml" 
-    href="{% if config.feed_proxy %}{{ config.feed_proxy }}{% else %}{{config.url_prefix}}/feeds/atom.xml{% endif %}" />
-  <link rel="SHORTCUT ICON" href="{{config.url_prefix}}/static/{{config.theme}}/favicon.ico"/>
+    href="{% if config.feed_proxy %}{{ config.feed_proxy }}{% else %}/feeds/atom.xml{% endif %}" />
+  <link rel="SHORTCUT ICON" href="/static/{{config.theme}}/favicon.ico"/>
   {% if config.rel_me %}
     <link rel="me" href="{{config.rel_me}}" />
   {% endif %}
@@ -21,32 +21,32 @@
 </head>
 <body>
   <div id="header-wrap"><div id="header" class="container_16">
-    <h1 id="logo-text"><a href="{{config.url_prefix}}/" title="">{{config.blog_name}}</a></h1>
+    <h1 id="logo-text"><a href="/" title="">{{config.blog_name}}</a></h1>
     <p id="intro">{{config.slogan}}</p>
     <div  id="nav">
       <ul>
-        <li{% if generator_class == "IndexContentGenerator" %} id="current"{% endif %}>
-          <a href="{{config.url_prefix}}/">Home</a></li>
-        <li{% if generator_class == "ArchiveIndexContentGenerator" %} id="current"{% else %}
-          {% if generator_class == "ArchivePageContentGenerator" %} id="current"{% endif %}{% endif %}>
-            <a href="{{config.url_prefix}}/archive/">Archive</a></li>
+        <li{% if path == '/' %} id="current"{% endif %}>
+          <a href="/">Home</a></li>
+        <li{% if handler_class in ['ArchiveIndexHandler', 'ArchiveHandler'] %}
+          id="current"{% endif %}>
+          <a href="/archive/">Archive</a></li>
         {% if is_admin %}
           <li{% if handler_class == "AdminHandler" %} id="current"{% endif %}>
-            <a href="{{config.url_prefix}}/admin/posts">Posts</a></li>
+            <a href="/admin/posts">Posts</a></li>
           <li{% if handler_class == "PageAdminHandler" %} id="current"{% endif %}>
-            <a href="{{config.url_prefix}}/admin/pages">Pages</a></li>
+            <a href="/admin/pages">Pages</a></li>
         {% endif %}
       </ul>
     </div>
     <div id="header-image"></div> 
-    <form id="quick-search" action="{{config.url_prefix}}/search" method="get">
+    <form id="quick-search" action="/search" method="get">
       <p>
         <label for="q">Search:</label>
-        <input type="hidden" name="cref" value="http://{{config.host}}{{config.url_prefix}}/cse.xml" />
+        <input type="hidden" name="cref" value="http://{{config.host}}/cse.xml" />
         <input type="hidden" name="cof" value="FORID:11" />
         <input type="hidden" name="ie" value="UTF-8" />
         <input class="tbox" type="text" name="q" size="31" />
-        <input class="btn" type="image" name="sa" value="Search" src="{{config.url_prefix}}/static/{{config.theme}}/images/search.gif" alt="Search" />
+        <input class="btn" type="image" name="sa" value="Search" src="/static/{{config.theme}}/images/search.gif" alt="Search" />
       </p>
     </form>
     <script type="text/javascript" src="http://www.google.com/coop/cse/brand?form=quick-search&lang=en"></script>
@@ -75,11 +75,11 @@
         Design by : <a href="http://www.styleshout.com/">styleshout</a>
       </p>
       <p class="bottom-right" >
-        <a href="{{config.url_prefix}}/">Home</a> |
+        <a href="/">Home</a> |
         <a href="{% if config.feed_proxy %}
             {{ config.feed_proxy }}
           {% else %}
-            {{config.url_prefix}}/feeds/atom.xml
+            /feeds/atom.xml
           {% endif %}">Atom</a> |
         <a href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a> |
         <a href="http://validator.w3.org/check/referer">XHTML</a>
