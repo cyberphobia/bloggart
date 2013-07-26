@@ -141,13 +141,37 @@ class PageContentHandler(basehandler.BaseHandler):
     return self.render(os.path.join('pages', page.template))
 
 
+class SitemapHandler(basehandler.BaseHandler):
+  @basehandler.cached()
+  def get(self):
+    q = models.BlogPost.all()
+    q.filter('is_deleted =', False)
+
+    posts = q.run(batch_size=100)
+    paths = ['/', '/archive/']
+    for post in posts:
+      if post.path and post.published:
+        paths.append(post.path)
+        for tag in post.normalized_tags:
+          paths.append('/tag/%s' % tag)
+
+    q = models.Page.all()
+    pages = q.run(batch_size=100)
+    for page in pages:
+      paths.append(page.path)
+
+    self.templ['paths'] = paths
+    return self.render('sitemap.xml')
+
+
 app = webapp2.WSGIApplication([
     ('/', PostListingHandler),
     ('/feeds/atom.xml', AtomHandler),
+    ('/sitemap.xml', SitemapHandler),
     ('/page/(\d+)', PostListingHandler),
     ('/archive/', ArchiveIndexHandler),
     ('/archive/(\d+/\d+)/', ArchiveHandler),
-    ('/tag/(\w+/?\d*)', TagsHandler),
+    ('/tag/([\w-]+/?\d*)', TagsHandler),
     ('(/\d+/\d+/.*)', BlogPostHandler),
     ('(/.*)', PageContentHandler)
 ])

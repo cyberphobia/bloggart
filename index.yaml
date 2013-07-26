@@ -45,6 +45,11 @@ indexes:
   properties:
   - name: is_deleted
   - name: published
+
+- kind: BlogPost
+  properties:
+  - name: is_deleted
+  - name: published
     direction: desc
 
 - kind: BlogPost

@@ -5,8 +5,8 @@ import os
 from django import forms
 from google.appengine.api import users
 from google.appengine.ext import deferred
-from google.appengine.ext.db import djangoforms
 
+import djangoforms
 import webapp2
 import xsrfutil
 
@@ -86,7 +86,7 @@ class PostHandler(basehandler.BaseHandler):
         })
     self.render_to_response('admin/edit.html')
 
-  @basehandler.csrf_protect
+  @xsrfutil.xsrf_protect
   @with_post
   def post(self, post):
     form = PostForm(data=self.request.POST, instance=post)
@@ -103,7 +103,7 @@ class PostHandler(basehandler.BaseHandler):
 
 
 class DeleteHandler(basehandler.BaseHandler):
-  @basehandler.csrf_protect
+  @xsrfutil.xsrf_protect
   @with_post
   def post(self, post):
     post.remove()
@@ -170,7 +170,7 @@ class PageHandler(basehandler.BaseHandler):
         })
     self.render_to_response('admin/editpage.html')
 
-  @basehandler.csrf_protect
+  @xsrfutil.xsrf_protect
   @with_page
   def post(self, page):
     form = None
@@ -198,7 +198,7 @@ class PageHandler(basehandler.BaseHandler):
 
 
 class PageDeleteHandler(basehandler.BaseHandler):
-  @basehandler.csrf_protect
+  @xsrfutil.xsrf_protect
   @with_page
   def post(self, page):
     page.remove()
@@ -206,7 +206,7 @@ class PageDeleteHandler(basehandler.BaseHandler):
 
 
 class RegenerateHandler(basehandler.BaseHandler):
-  @basehandler.csrf_protect
+  @xsrfutil.xsrf_protect
   def post(self):
     memcache.flush_all()
     self.render_to_response('admin/regenerating.html')

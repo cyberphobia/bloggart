@@ -5,7 +5,6 @@ import re
 
 from google.appengine.api import memcache
 from google.appengine.ext import db
-from google.appengine.ext import deferred
 
 import config
 import markup
@@ -54,7 +53,7 @@ class BlogPost(db.Model):
   tags = aetycoon.SetProperty(basestring, indexed=False)
   published = db.DateTimeProperty()
   created = db.DateTimeProperty(auto_now_add=True)
-  updated = db.DateTimeProperty(auto_now=True)
+  updated = db.DateTimeProperty(auto_now=False)
   deps = aetycoon.PickleProperty()
   draft = db.TextProperty()
   is_deleted = db.BooleanProperty(default=False)
@@ -100,12 +99,13 @@ class BlogPost(db.Model):
       self.draft = body
     else:
       memcache.flush_all()
+      self.updated = datetime.datetime.now()
       self.draft = None
       self.body = body
 
     if not self.path and not is_draft:
       # Post is being published for the first time
-      self.published = datetime.datetime.now()
+      self.published = self.updated = datetime.datetime.now()
       same_path = True
       count = 0
       while same_path:
@@ -114,10 +114,10 @@ class BlogPost(db.Model):
         count += 1
 
       self.path = path
-      if self.is_saved():
+      if self.is_saved() or not is_draft:
         new_post = self.set_key_name(path)
         new_post.put()
-        self.delete()
+        self.is_saved() and self.delete()
         BlogDate.create_for_post(new_post)
         return new_post
 
@@ -134,20 +134,19 @@ class BlogPost(db.Model):
       return
 
     # TODO: Delete BlogDate if this is the only entry for the date.
-    self.delete()
+    self.is_deleted = True
+    self.put()
     memcache.flush_all()
 
   @classmethod
   def get_prev_next(cls, post):
     """Retrieves the chronologically previous and next post for this post"""
     q = cls.all().order('-published')
-    q.filter('is_draft =', False)
     q.filter('is_deleted =', False)
     q.filter('published <', post.published)
     prev = q.get()
 
     q = cls.all().order('published')
-    q.filter('is_draft =', False)
     q.filter('is_deleted =', False)
     q.filter('published >', post.published)
     next = q.get()
@@ -184,27 +183,3 @@ class Page(db.Model):
       return
     self.delete()
     memcache.flush_all()
-
-
-class CsrfSecret(db.Model):
-  secret = db.StringProperty(required=True)
-
-  @staticmethod
-  def get():
-    secret = memcache.get('csrf_secret')
-    if not secret:
-      csrf_secret = CsrfSecret.all().get()
-      if csrf_secret:
-        memcache.set('csrf_secret', csrf_secret.secret)
-      else:
-        # hmm, nothing found? We need to generate a secret for csrf protection.
-        import os, binascii
-        secret = binascii.b2a_hex(os.urandom(16))
-        csrf_secret = CsrfSecret(secret=secret)
-        csrf_secret.put()
-
-      secret = csrf_secret.secret
-      memcache.set('csrf_secret', secret)
-
-    return secret
-

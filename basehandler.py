@@ -11,25 +11,6 @@ import models
 import xsrfutil
 
 
-def csrf_protect(func):
-  """Decorator to protect get and post functions from CSRF."""
-  def decorate(self, *args, **kwargs):
-    path = os.environ.get('PATH_INFO', '/')
-    token = self.request.get('csrf', None)
-    if not token:
-      self.error(403)
-      return
-
-    if not xsrfutil.validate_token(models.CsrfSecret.get(), token,
-        users.get_current_user().user_id(), path):
-      self.error(403)
-      return
-
-    return func(self, *args, **kwargs)
-
-  return decorate
-
-
 def cached(content_type='text/html; charset=utf-8'):
   """Decorator for caching the output in memcache.
 
@@ -61,14 +42,6 @@ def cached(content_type='text/html; charset=utf-8'):
 
 
 class BaseHandler(webapp2.RequestHandler):
-  def _csrf_token(self, path=None):
-    """Generates a CSRF token for the given path."""
-    if not path:
-      path = os.environ.get('PATH_INFO')
-    user_id = 'anonymous'
-    if self.user:
-      user_id = self.user.user_id()
-    return xsrfutil.generate_token(models.CsrfSecret.get(), user_id, path)
 
   def __init__(self, request=None, response=None):
     super(BaseHandler, self).__init__(request, response)
@@ -82,7 +55,7 @@ class BaseHandler(webapp2.RequestHandler):
         loader=jinja2.FileSystemLoader(template_dirs),
         extensions=['jinja2.ext.autoescape'],
         autoescape=True)
-    self.jinja.globals['csrf_token'] = self._csrf_token
+    self.jinja.globals['csrf_token'] = xsrfutil.xsrf_token
 
     self.user = users.get_current_user()
 
