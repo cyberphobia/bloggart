@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Search results - {{config.blog_name}}{% endblock %}
 {% block body %}
-  <div id="cse-search-results"></div>
-  <script type="text/javascript">
-    var googleSearchIframeName = "cse-search-results";
-    var googleSearchFormName = "cse-search-box";
-    var googleSearchFrameWidth = 649;
-    var googleSearchDomain = "www.google.com";
-    var googleSearchPath = "/cse";
-  </script>
-  <script type="text/javascript" src="http://www.google.com/afsonline/show_afs_search.js"></script>
+<script>
+  (function() {
+    var cx = '{{ config.cse_id }}';
+    var gcse = document.createElement('script');
+    gcse.type = 'text/javascript';
+    gcse.async = true;
+    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+        '//www.google.com/cse/cse.js?cx=' + cx;
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(gcse, s);
+  })();
+</script>
+<div class="gcse-searchresults-only"></div>
 {% endblock %}

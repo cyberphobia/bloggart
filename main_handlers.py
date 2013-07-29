@@ -141,6 +141,14 @@ class PageContentHandler(basehandler.BaseHandler):
     return self.render(os.path.join('pages', page.template))
 
 
+class SearchHandler(basehandler.BaseHandler):
+  def get(self):
+    self.render_to_response('search.html')
+
+  def post(self):
+    self.get()
+
+
 class SitemapHandler(basehandler.BaseHandler):
   @basehandler.cached()
   def get(self):
@@ -171,6 +179,7 @@ app = webapp2.WSGIApplication([
     ('/page/(\d+)', PostListingHandler),
     ('/archive/', ArchiveIndexHandler),
     ('/archive/(\d+/\d+)/', ArchiveHandler),
+    ('/search', SearchHandler),
     ('/tag/([\w-]+/?\d*)', TagsHandler),
     ('(/\d+/\d+/.*)', BlogPostHandler),
     ('(/.*)', PageContentHandler)

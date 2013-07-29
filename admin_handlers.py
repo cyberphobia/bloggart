@@ -3,6 +3,7 @@ import logging
 import os
 
 from django import forms
+from google.appengine.api import memcache
 from google.appengine.api import users
 from google.appengine.ext import deferred
 
@@ -205,11 +206,11 @@ class PageDeleteHandler(basehandler.BaseHandler):
     self.render_to_response('admin/deletedpage.html')
 
 
-class RegenerateHandler(basehandler.BaseHandler):
+class ClearCacheHandler(basehandler.BaseHandler):
   @xsrfutil.xsrf_protect
   def post(self):
     memcache.flush_all()
-    self.render_to_response('admin/regenerating.html')
+    self.render_to_response('admin/cache_cleared.html')
 
 
 app = webapp2.WSGIApplication([
@@ -217,7 +218,7 @@ app = webapp2.WSGIApplication([
   ('/admin/posts', AdminHandler),
   ('/admin/pages', PageAdminHandler),
   ('/admin/newpost', PostHandler),
-  ('/admin/regenerate', RegenerateHandler),
+  ('/admin/clearcache', ClearCacheHandler),
   ('/admin/post/delete(/.*)', DeleteHandler),
   ('/admin/post/preview(/.*)', PreviewHandler),
   ('/admin/post(/.*)', PostHandler),

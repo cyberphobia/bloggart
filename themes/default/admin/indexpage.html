@@ -52,8 +52,8 @@
     <a href="?start={{next_offset}}&count={{count}}">Next -></a>
   {% endif %}
   <h2>Actions</h2>
-  <form method="post" action="/admin/regenerate">
-    <input type="hidden" name="xsrf" value="{{ csrf_token('/admin/regenerate') }}">
-    <input type="submit" value="Regenerate all content" />
+  <form method="post" action="/admin/clearcache">
+    <input type="hidden" name="xsrf" value="{{ csrf_token('/admin/clearcache') }}">
+    <input type="submit" value="Clear Cache" />
   </form>
 {% endblock %}

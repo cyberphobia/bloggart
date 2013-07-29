@@ -2,7 +2,7 @@
 blog_name = 'Cyberphobia'
 
 # Your name (used for copyright info)
-author_name = 'Daniel F'
+author_name = 'Daniel'
 
 # (Optional) slogan
 slogan = 'Your Random Security Blog.'
@@ -54,7 +54,7 @@ disqus_forum = None
 summary_length = 200
 
 # If you want to use Google Analytics, enter your 'web property id' here
-analytics_id = None
+analytics_id = 'UA-42750376-1'
 
 # If you want to use PubSubHubbub, supply the hub URL to use here.
 hubbub_hub_url = 'http://pubsubhubbub.appspot.com/'
@@ -78,3 +78,6 @@ feed_proxy = None
 # To format the date of your post.
 # http://docs.djangoproject.com/en/1.1/ref/templates/builtins/#now
 date_format = "%d %B, %Y"
+
+# Google Custom Search Engine ID
+cse_id = '008733656639822921324:aopzzeyt59q'
