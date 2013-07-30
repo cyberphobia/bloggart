@@ -48,7 +48,7 @@ html_mime_type = "text/html; charset=utf-8"
 
 # To use disqus for comments, set this to the 'short name' of the disqus forum
 # created for the purpose.
-disqus_forum = None
+disqus_forum = 'cyberphobia'
 
 # Length (in words) of summaries, by default
 summary_length = 200

@@ -2,9 +2,11 @@ import datetime
 import itertools
 import os
 
+import urllib
 import webapp2
 
 from google.appengine.api import memcache
+from google.appengine.api import urlfetch
 from google.appengine.ext import db
 
 import basehandler
@@ -127,7 +129,7 @@ class AtomHandler(basehandler.BaseHandler):
         'hub.url': 'http://%s/feeds/atom.xml' % (config.host,),
         'hub.mode': 'publish',
     })
-    response = urlfetch.fetch(hub_url, data, urlfetch.POST)
+    response = urlfetch.fetch(url=hub_url, payload=data, method=urlfetch.POST)
 
 
 class PageContentHandler(basehandler.BaseHandler):
